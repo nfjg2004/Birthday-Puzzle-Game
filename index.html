@@ -522,8 +522,8 @@
                 SCREEN_WIDTH: 1080,
                 SCREEN_HEIGHT: 2200,
                 BASE_WIDTH: 520,
-                BASE_CARD_SIZE: 52,
-                BASE_CARD_GAP: 4,
+                BASE_CARD_SIZE: 62,
+                BASE_CARD_GAP: 3,
                 GRID_COLS: 8,
                 GRID_ROWS: 10,
                 SLOT_MAX: 7,
@@ -648,15 +648,6 @@
                 shuffleLeft: CONFIG.SHUFFLE_LIMIT
             };
 
-            // 飞行动画状态
-            let moveAnim = {
-                active: false,
-                card: null,
-                fromX: 0, fromY: 0, toX: 0, toY: 0,
-                startTime: 0, duration: 350,
-                insertIndex: 0, sourceInfo: null, progress: 0
-            };
-
             function getScale() { return CONFIG.SCREEN_WIDTH / CONFIG.BASE_WIDTH; }
 
             function updateCardSize() {
@@ -723,17 +714,6 @@
                 return helpers;
             }
 
-            // 连锁匹配处理（递归，等待每次匹配动画完成后再检测下一次）
-            function processMatches(onComplete) {
-                if (!applyMatch()) {
-                    if (onComplete) onComplete();
-                    return;
-                }
-                setTimeout(() => {
-                    processMatches(onComplete);
-                }, CONFIG.MATCH_ANIMATION_DURATION + 50);
-            }
-
             function applyMatch() {
                 if (gameState.slotCards.length < 3) return false;
                 let typeCount = {};
@@ -761,63 +741,33 @@
                 gameState.score += removedCards.length * 5;
                 gameState.matchingCards = removedCards;
                 AudioManager.play('match');
-                updateUI();
-                drawGame();
                 setTimeout(() => { gameState.matchingCards = [];
                     drawGame(); }, CONFIG.MATCH_ANIMATION_DURATION);
+                updateUI();
+                drawGame();
+                checkGameState();
                 return true;
             }
 
             function addToSlot(card, source, helperIndex = -1) {
                 if (gameState.slotCards.length >= CONFIG.SLOT_MAX || gameState.gameOver) return false;
-                if (moveAnim.active) return false;
 
-                // ========== 修复：从后往前找，插入到同类卡片组的最后面 ==========
                 let insertIndex = gameState.slotCards.length;
-                for (let i = gameState.slotCards.length - 1; i >= 0; i--) {
+                for (let i = 0; i < gameState.slotCards.length; i++) {
                     if (gameState.slotCards[i].type === card.type) {
                         insertIndex = i + 1;
                         break;
                     }
                 }
 
-                // 计算起始坐标（移除前）
-                let pos = getCardPositions();
-                let cs = pos.cardSize;
-                let cg = pos.cardGap;
-                let fromX, fromY;
+                gameState.slotCards.splice(insertIndex, 0, card);
 
-                if (source === 'main') {
-                    let col = getCardColumn(card);
-                    let row = -1;
-                    for (let r = 0; r < CONFIG.GRID_ROWS; r++) {
-                        if (gameState.grid[col][r] === card) {
-                            row = r;
-                            break;
-                        }
-                    }
-                    if (row === -1) return false;
-                    fromX = pos.gridX + col * (cs + cg);
-                    fromY = pos.gridY + row * (cs + cg);
-                } else {
-                    let row = Math.floor(helperIndex / CONFIG.HELPER_COLS);
-                    let col = helperIndex % CONFIG.HELPER_COLS;
-                    fromX = pos.gridX + col * (cs + cg);
-                    fromY = pos.helperStartY + row * (cs + cg);
-                }
-
-                // 计算目标卡槽坐标
-                let slotStep = cs + 4 * getScale();
-                let slotStartX = pos.slotX + 10 * getScale();
-                let toX = slotStartX + insertIndex * slotStep;
-                let toY = pos.slotY + 11 * getScale();
-
-                // 记录操作信息并从源移除
                 let sourceInfo = {
                     card: card,
                     source: source,
                     colOrIndex: source === 'main' ? getCardColumn(card) : helperIndex
                 };
+                gameState.undoStack.push(sourceInfo);
 
                 if (source === 'main') {
                     let col = sourceInfo.colOrIndex;
@@ -836,54 +786,13 @@
                     gameState.helpers[helperIndex] = null;
                 }
 
-                // 启动飞行动画
-                moveAnim = {
-                    active: true,
-                    card: card,
-                    fromX: fromX,
-                    fromY: fromY,
-                    toX: toX,
-                    toY: toY,
-                    startTime: performance.now(),
-                    duration: 350,
-                    insertIndex: insertIndex,
-                    sourceInfo: sourceInfo,
-                    progress: 0
-                };
-
                 AudioManager.play('click');
+                let any = true;
+                while (any) any = applyMatch();
                 updateUI();
-                requestAnimationFrame(updateMoveAnimation);
+                drawGame();
+                checkGameState();
                 return true;
-            }
-
-            function updateMoveAnimation(now) {
-                if (!moveAnim.active) return;
-                let elapsed = now - moveAnim.startTime;
-                let progress = Math.min(elapsed / moveAnim.duration, 1);
-                // ease-out cubic
-                let ease = 1 - Math.pow(1 - progress, 3);
-                moveAnim.progress = ease;
-
-                if (progress < 1) {
-                    requestAnimationFrame(updateMoveAnimation);
-                } else {
-                    onMoveComplete();
-                }
-            }
-
-            function onMoveComplete() {
-                // 卡片正式落位卡槽
-                gameState.slotCards.splice(moveAnim.insertIndex, 0, moveAnim.card);
-                gameState.undoStack.push(moveAnim.sourceInfo);
-                moveAnim.active = false;
-
-                // 落位后再检测匹配（支持连锁反应）
-                processMatches(() => {
-                    checkGameState();
-                    updateUI();
-                    drawGame();
-                });
             }
 
             function getCardColumn(card) {
@@ -896,7 +805,7 @@
             }
 
             function undo() {
-                if (gameState.undoStack.length === 0 || gameState.gameOver || moveAnim.active) return;
+                if (gameState.undoStack.length === 0 || gameState.gameOver) return;
                 if (!gameState.godMode && gameState.undoLeft <= 0) return;
 
                 if (!gameState.godMode) gameState.undoLeft--;
@@ -940,7 +849,7 @@
             }
 
             function shuffleCards() {
-                if ((gameState.shuffleLeft <= 0 && !gameState.godMode) || gameState.gameOver || moveAnim.active) return;
+                if ((gameState.shuffleLeft <= 0 && !gameState.godMode) || gameState.gameOver) return;
                 if (!gameState.godMode) gameState.shuffleLeft--;
                 let allCards = [];
                 for (let col = 0; col < CONFIG.GRID_COLS; col++)
@@ -958,7 +867,6 @@
             }
 
             function resetGame() {
-                moveAnim.active = false;
                 gameState.grid = generateMainCards();
                 gameState.helpers = generateHelpers();
                 gameState.slotCards = [];
@@ -1022,15 +930,11 @@
                 if (scoreValue) scoreValue.textContent = gameState.score;
                 if (undoCountSpan) undoCountSpan.textContent = gameState.godMode ? '∞' : gameState.undoLeft;
                 if (shuffleCountSpan) shuffleCountSpan.textContent = gameState.godMode ? '∞' : gameState.shuffleLeft;
-                
-                let animating = moveAnim.active;
-                
-                if (undoBtn) undoBtn.disabled = animating || (!gameState.godMode && gameState.undoLeft <= 0) || gameState.gameOver ||
+                if (undoBtn) undoBtn.disabled = (!gameState.godMode && gameState.undoLeft <= 0) || gameState.gameOver ||
                     gameState.undoStack.length === 0;
-                if (shuffleBtn) shuffleBtn.disabled = animating || (!gameState.godMode && gameState.shuffleLeft <= 0) || gameState
+                if (shuffleBtn) shuffleBtn.disabled = (!gameState.godMode && gameState.shuffleLeft <= 0) || gameState
                     .gameOver;
-                if (resetBtn) resetBtn.disabled = animating;
-                if (godBtn) godBtn.disabled = animating || gameState.godMode || gameState.gameOver;
+                if (godBtn) godBtn.disabled = gameState.godMode || gameState.gameOver;
             }
 
             function showGameOver(win) {
@@ -1118,8 +1022,6 @@
                     for (let row = 0; row < CONFIG.GRID_ROWS; row++) {
                         let card = gameState.grid[col][row];
                         if (!card) continue;
-                        // 正在飞入的卡片在动画层单独绘制
-                        if (moveAnim.active && moveAnim.card === card) continue;
                         let x = pos.gridX + col * (cs + cg),
                             y = pos.gridY + row * (cs + cg);
                         let clickable = (row === bottomRow);
@@ -1132,7 +1034,6 @@
                         if (idx >= gameState.helpers.length) continue;
                         let card = gameState.helpers[idx];
                         if (!card) continue;
-                        if (moveAnim.active && moveAnim.card === card) continue;
                         let x = pos.gridX + col * (cs + cg);
                         let y = pos.helperStartY + row * (cs + cg);
                         drawCard(ctx, card, x, y, cs);
@@ -1155,19 +1056,10 @@
                     drawCard(ctx, card, x, y, cs, gameState.matchingCards.includes(card) ? 0.6 : 1, gameState
                         .matchingCards.includes(card) ? 1.2 : 1);
                 });
-                
-                // 绘制飞入动画中的卡片
-                if (moveAnim.active) {
-                    let curX = moveAnim.fromX + (moveAnim.toX - moveAnim.fromX) * moveAnim.progress;
-                    let curY = moveAnim.fromY + (moveAnim.toY - moveAnim.fromY) * moveAnim.progress;
-                    // 飞行过程中稍微放大，增加视觉张力
-                    let scale = 1 + 0.15 * Math.sin(moveAnim.progress * Math.PI);
-                    drawCard(ctx, moveAnim.card, curX, curY, cs, 1, scale);
-                }
             }
 
             function handleCanvasClick(e) {
-                if (gameState.gameOver || moveAnim.active) return;
+                if (gameState.gameOver) return;
                 e.preventDefault();
                 let rect = canvas.getBoundingClientRect();
                 let scaleX = canvas.width / rect.width,
