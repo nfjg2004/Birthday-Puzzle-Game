@@ -1,0 +1,1459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover, maximum-scale=1.0, minimum-scale=1.0">
+    <title>🎂 生日消消乐</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.5);
+            --shadow-lg: 0 12px 36px rgba(90, 62, 75, 0.18);
+            --radius-xl: 32px;
+            --radius-full: 50px;
+            --font-display: 'Georgia', 'Noto Serif SC', 'KaiTi', serif;
+            --font-body: 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+        }
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #f5e6ec;
+            font-family: var(--font-body);
+        }
+        .game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 520px;
+            max-height: 100dvh;
+            margin: 0 auto;
+            background: var(--glass-bg);
+            backdrop-filter: blur(24px);
+            overflow: hidden;
+            box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            display: flex;
+            flex-direction: column;
+        }
+        @media (min-width: 521px) {
+            .game-container {
+                border-radius: var(--radius-xl);
+                height: 95vh;
+                margin-top: 2.5vh;
+            }
+        }
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ===== 菜单页 ===== */
+        .menu-screen {
+            background: linear-gradient(180deg, rgba(255, 240, 245, 0.7) 0%, rgba(255, 220, 230, 0.85) 100%);
+            backdrop-filter: blur(8px);
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            padding: 40px 24px;
+            overflow: hidden;
+        }
+        .menu-star {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+            animation: twinkle var(--twinkle-duration, 2.5s) ease-in-out infinite;
+            animation-delay: var(--twinkle-delay, 0s);
+        }
+        .menu-star.gold {
+            background: radial-gradient(circle, #ffe9a0 0%, #ffd54f 60%, transparent 100%);
+            box-shadow: 0 0 8px 3px rgba(255, 200, 60, 0.7), 0 0 18px 6px rgba(255, 180, 80, 0.35);
+        }
+        .menu-star.white {
+            background: radial-gradient(circle, #ffffff 0%, #e8e0f0 50%, transparent 100%);
+            box-shadow: 0 0 5px 2px rgba(255, 255, 255, 0.8), 0 0 10px 3px rgba(220, 210, 240, 0.4);
+        }
+        @keyframes twinkle {
+            0%,
+            100% {
+                opacity: 0.25;
+                transform: scale(0.7);
+            }
+            30% {
+                opacity: 1;
+                transform: scale(1.5);
+            }
+            60% {
+                opacity: 0.4;
+                transform: scale(0.9);
+            }
+            85% {
+                opacity: 0.95;
+                transform: scale(1.35);
+            }
+        }
+        .float-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 1;
+        }
+        .float-item {
+            position: absolute;
+            bottom: -60px;
+            font-size: var(--float-size, 36px);
+            pointer-events: none;
+            animation: floatUp var(--float-duration, 3.5s) ease-in forwards;
+            animation-delay: var(--float-delay, 0s);
+            opacity: 0;
+            filter: drop-shadow(0 4px 8px rgba(255, 150, 180, 0.3));
+        }
+        @keyframes floatUp {
+            0% {
+                transform: translateY(0) rotate(var(--float-start-rotate, -8deg)) scale(0.55);
+                opacity: 0;
+            }
+            12% {
+                opacity: 0.9;
+                transform: translateY(-8vh) rotate(calc(var(--float-start-rotate, -8deg) * 0.5)) scale(0.85);
+            }
+            35% {
+                opacity: 0.85;
+                transform: translateY(-28vh) rotate(calc(var(--float-mid-rotate, 6deg))) scale(1);
+            }
+            65% {
+                opacity: 0.55;
+                transform: translateY(-58vh) rotate(calc(var(--float-mid-rotate, 6deg) * 0.3)) scale(1.05);
+            }
+            90% {
+                opacity: 0.1;
+                transform: translateY(-90vh) rotate(var(--float-end-rotate, 18deg)) scale(0.7);
+            }
+            100% {
+                transform: translateY(-108vh) rotate(var(--float-end-rotate, 18deg)) scale(0.35);
+                opacity: 0;
+            }
+        }
+        .menu-decoration {
+            position: absolute;
+            top: 8%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 80px;
+            opacity: 0.3;
+            pointer-events: none;
+            z-index: 2;
+        }
+        .menu-decoration::before {
+            content: '🎂';
+            font-size: 70px;
+            display: block;
+            text-align: center;
+            animation: float 3s ease-in-out infinite;
+        }
+        .menu-title {
+            font-family: var(--font-display);
+            font-size: clamp(2.2rem, 7vw, 3.2rem);
+            font-weight: 700;
+            color: #d4456a;
+            text-shadow: 0 2px 4px rgba(180, 70, 100, 0.2), 0 0 40px rgba(255, 180, 200, 0.35);
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 2;
+            animation: titleGlow 3s ease-in-out infinite;
+        }
+        @keyframes titleGlow {
+            0%,
+            100% {
+                text-shadow: 0 2px 4px rgba(180, 70, 100, 0.2), 0 0 30px rgba(255, 180, 200, 0.3);
+            }
+            50% {
+                text-shadow: 0 2px 8px rgba(180, 70, 100, 0.3), 0 0 55px rgba(255, 150, 180, 0.5);
+            }
+        }
+        .menu-subtitle {
+            font-size: 1rem;
+            color: #8b6b7a;
+            margin-bottom: 30px;
+            background: rgba(255, 245, 235, 0.6);
+            padding: 6px 14px;
+            border-radius: 40px;
+            backdrop-filter: blur(4px);
+            position: relative;
+            z-index: 2;
+        }
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 40px;
+            width: 100%;
+            max-width: 260px;
+            position: relative;
+            z-index: 2;
+        }
+        .menu-btn {
+            width: 100%;
+            padding: 15px 28px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            border: none;
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            transition: all 0.35s ease;
+        }
+        .start-btn {
+            background: linear-gradient(135deg, #ffb6c1, #ff8fa3);
+            color: white;
+            box-shadow: 0 8px 20px rgba(255, 130, 155, 0.4);
+            font-size: 1.2rem;
+        }
+        .start-btn:active {
+            transform: scale(0.96);
+        }
+        .quit-btn {
+            background: rgba(255, 255, 255, 0.7);
+            color: #5a3e4b;
+            box-shadow: 0 2px 8px rgba(90, 62, 75, 0.1);
+        }
+        .quit-btn:active {
+            transform: scale(0.96);
+        }
+        .music-btn {
+            background: rgba(245, 220, 200, 0.9);
+            color: #b95f7a;
+            border: 1px solid #ffcdb5;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            font-size: 0.95rem;
+        }
+        .music-btn:active {
+            transform: scale(0.96);
+        }
+        .music-btn.active-music {
+            background: #ffe0b5;
+            color: #c9785a;
+            border-color: #ffb48a;
+        }
+        .menu-footer {
+            position: absolute;
+            bottom: 36px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: #b89aa5;
+            font-size: 0.85rem;
+            z-index: 2;
+            animation: float 2.8s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+
+        /* ===== 游戏页 ===== */
+        .game-screen {
+            display: none;
+            background: #f5e6ec;
+            flex-direction: column;
+            z-index: 5;
+            position: relative;
+        }
+        .game-header {
+            padding: 14px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.55);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 180, 195, 0.4);
+            position: relative;
+            z-index: 2;
+            flex-shrink: 0;
+        }
+        .game-title {
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #d4456a;
+        }
+        .score-board {
+            background: rgba(255, 182, 193, 0.35);
+            padding: 6px 16px;
+            border-radius: var(--radius-full);
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+        .score-value {
+            color: #e8577a;
+            font-size: 1.15rem;
+            font-weight: 700;
+        }
+
+        /* ===== Canvas 滚动包裹层 ===== */
+        .canvas-scroll-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            min-height: 0;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            position: relative;
+            z-index: 1;
+            background: transparent;
+        }
+        /* 自定义滚动条 - 桌面端 */
+        .canvas-scroll-wrapper::-webkit-scrollbar {
+            width: 6px;
+        }
+        .canvas-scroll-wrapper::-webkit-scrollbar-track {
+            background: transparent;
+            border-radius: 3px;
+        }
+        .canvas-scroll-wrapper::-webkit-scrollbar-thumb {
+            background: rgba(200, 160, 175, 0.45);
+            border-radius: 3px;
+            transition: background 0.3s;
+        }
+        .canvas-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+            background: rgba(200, 140, 160, 0.7);
+        }
+        /* Firefox 滚动条 */
+        .canvas-scroll-wrapper {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(200, 160, 175, 0.45) transparent;
+        }
+
+        .game-canvas {
+            display: block;
+            cursor: pointer;
+            touch-action: manipulation;
+            background: transparent;
+        }
+        .game-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            padding: 12px 14px;
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 180, 195, 0.4);
+            flex-shrink: 0;
+        }
+        .game-btn {
+            flex: 1;
+            min-width: 56px;
+            max-width: 100px;
+            padding: 10px 6px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            border: 1.5px solid transparent;
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .game-btn:active {
+            transform: scale(0.94);
+        }
+        .game-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+        .undo-btn {
+            background: #e8f0fe;
+            color: #5a7aaa;
+            border-color: #d0dff5;
+        }
+        .shuffle-btn {
+            background: #fff3e6;
+            color: #b8805a;
+            border-color: #f5dcc8;
+        }
+        .reset-btn {
+            background: #f5f5f5;
+            color: #7a6a6a;
+            border-color: #e5e0e0;
+        }
+        .god-btn {
+            background: linear-gradient(135deg, #fff8dc, #fff0b3);
+            color: #8b7500;
+            border-color: #f0d860;
+            font-weight: 700;
+        }
+        .god-btn.active {
+            background: linear-gradient(135deg, #ffd700, #ffc107);
+            color: #5a4000;
+            border-color: #e6a800;
+            box-shadow: 0 0 20px rgba(255, 200, 40, 0.5);
+            animation: goldPulse 2s infinite;
+        }
+        @keyframes goldPulse {
+            0%,
+            100% {
+                box-shadow: 0 0 18px rgba(255, 200, 40, 0.45);
+            }
+            50% {
+                box-shadow: 0 0 32px rgba(255, 200, 40, 0.7);
+            }
+        }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(40, 20, 30, 0.3);
+            backdrop-filter: blur(2px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .modal-content {
+            background: rgba(255, 255, 255, 0.85);
+            padding: 36px 28px 30px;
+            border-radius: 24px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+            max-width: 320px;
+            width: 85%;
+            backdrop-filter: blur(4px);
+        }
+        .modal-title {
+            font-family: var(--font-display);
+            font-size: 1.4rem;
+            color: #d4456a;
+            margin-bottom: 14px;
+        }
+        .modal-score {
+            font-size: 1rem;
+            color: #8b6b7a;
+            margin-bottom: 24px;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 14px;
+            justify-content: center;
+        }
+        .modal-btn {
+            padding: 11px 22px;
+            border: none;
+            border-radius: var(--radius-full);
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .restart-btn {
+            background: #ffb6c1;
+            color: white;
+        }
+        .exit-btn {
+            background: #f0f0f0;
+            color: #5a3e4b;
+        }
+    </style>
+    <base target="_blank">
+</head>
+<body>
+    <div class="game-container" id="gameContainer">
+        <div id="menuScreen" class="screen menu-screen">
+            <div class="float-container" id="floatContainer"></div>
+            <div class="menu-decoration"></div>
+            <h1 class="menu-title">生日消消乐</h1>
+            <p class="menu-subtitle">✨ 点击下方按钮播放/暂停祝福旋律 ✨</p>
+            <div class="menu-buttons">
+                <button id="startBtn" class="menu-btn start-btn">🎂 开始游戏</button>
+                <button id="playMusicBtn" class="menu-btn music-btn">🎵 播放音乐</button>
+                <button id="quitBtn" class="menu-btn quit-btn">🚪 退出</button>
+            </div>
+            <p class="menu-footer">💝 祝我的宝宝生日快乐，天天开心！</p>
+        </div>
+
+        <div id="gameScreen" class="screen game-screen">
+            <div class="game-header">
+                <h2 class="game-title">🎈 Happy Birthday!</h2>
+                <div class="score-board">
+                    <span class="score-label">得分</span>
+                    <span id="scoreValue" class="score-value">0</span>
+                </div>
+            </div>
+            <!-- Canvas 可滚动包裹层 -->
+            <div class="canvas-scroll-wrapper" id="canvasScrollWrapper">
+                <canvas id="gameCanvas" class="game-canvas"></canvas>
+            </div>
+            <div class="game-buttons">
+                <button id="undoBtn" class="game-btn undo-btn">↩ 撤销(<span id="undoCount">3</span>)</button>
+                <button id="shuffleBtn" class="game-btn shuffle-btn">🔀 洗牌(<span id="shuffleCount">2</span>)</button>
+                <button id="resetBtn" class="game-btn reset-btn">🔄 重来</button>
+                <button id="godBtn" class="game-btn god-btn">👑 开通SVIP</button>
+            </div>
+        </div>
+
+        <div id="gameOverModal" class="modal">
+            <div class="modal-content">
+                <h2 id="gameOverTitle" class="modal-title">祝我的宝宝生日快乐！</h2>
+                <p class="modal-score">得分：<span id="finalScore">0</span></p>
+                <div class="modal-buttons">
+                    <button id="restartBtn" class="modal-btn restart-btn">🎮 再来一局</button>
+                    <button id="exitBtn" class="modal-btn exit-btn">🚪 退出游戏</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ========== 游戏配置 ==========
+            const CONFIG = {
+                GRID_COLS: 5,
+                GRID_ROWS: 15,
+                HELPER_ROWS: 2,
+                HELPER_COLS: 5,
+                SLOT_MAX: 7,
+                CARD_TYPES: 12,
+                UNDO_LIMIT: 3,
+                SHUFFLE_LIMIT: 2,
+                WIN_SCORE: 520,
+                MATCH_ANIMATION_DURATION: 300,
+                PAD_X: 20,
+                CARD_GAP: 6,
+                MAIN_HELPER_GAP: 30,
+                HELPER_SLOT_GAP: 20,
+                BOTTOM_MARGIN: 16,
+                TOP_PADDING: 14,
+                // 卡槽卡片缩小比例：0.65 = 65% 大小
+                SLOT_CARD_SCALE: 0.65,
+                SLOT_CARD_GAP: 4,
+                // 空3格位置（对称分布）
+                EMPTY_CELLS: [
+                    [0, 0],
+                    [2, 0],
+                    [4, 0]
+                ]
+            };
+
+            const CARD_COLORS = [
+                { bg: '#FFD6DC', border: '#FFBBC8', highlight: '#FFF0F3', text: '#C06070' },
+                { bg: '#FFE5D4', border: '#FFCFB5', highlight: '#FFF5ED', text: '#C08060' },
+                { bg: '#FFF8D4', border: '#FFECB0', highlight: '#FFFEF5', text: '#B8A050' },
+                { bg: '#D8F0D8', border: '#B8E0B8', highlight: '#F0FAF0', text: '#5A9060' },
+                { bg: '#D6E8FF', border: '#B5D0FF', highlight: '#F0F6FF', text: '#6078B0' },
+                { bg: '#E8D8FF', border: '#D0B8FF', highlight: '#F5F0FF', text: '#7860B0' },
+                { bg: '#FFD8EC', border: '#FFB8D8', highlight: '#FFF0F6', text: '#B06088' },
+                { bg: '#D4FFF0', border: '#B0FFDD', highlight: '#F0FFFA', text: '#50A878' },
+                { bg: '#FFECD4', border: '#FFD8B0', highlight: '#FFF8F0', text: '#B87850' },
+                { bg: '#D8DCFF', border: '#B8C0FF', highlight: '#F0F2FF', text: '#6068B0' },
+                { bg: '#FFD4E8', border: '#FFB0D0', highlight: '#FFF0F8', text: '#B06080' },
+                { bg: '#D4F0FF', border: '#B0D8FF', highlight: '#F0F8FF', text: '#5080B0' }
+            ];
+
+            // ========== 音频管理器 ==========
+            const AudioManager = {
+                sounds: {},
+                bgm: null,
+                menuBgm: null,
+                initialized: false,
+                init() {
+                    if (this.initialized) return;
+                    this.sounds = {
+                        click: new Audio('audio/click.wav'),
+                        match: new Audio('audio/match.wav'),
+                        lose: new Audio('audio/lose.wav'),
+                        reset: new Audio('audio/reset.wav'),
+                        shuffle: new Audio('audio/shuffle.wav'),
+                        undo: new Audio('audio/undo.wav'),
+                        win: new Audio('audio/win.wav')
+                    };
+                    this.bgm = new Audio('audio/bgm.mp3');
+                    this.bgm.loop = true;
+                    this.bgm.volume = 0.5;
+                    this.menuBgm = new Audio('audio/menu_bgm.mp3');
+                    this.menuBgm.loop = true;
+                    this.menuBgm.volume = 0.45;
+                    this.initialized = true;
+                },
+                play(name) {
+                    if (!this.initialized) this.init();
+                    const s = this.sounds[name];
+                    if (s) { s.currentTime = 0;
+                        s.play().catch(() => {}); }
+                },
+                playGameBgm() { if (!this.initialized) this.init();
+                    this.stopAllBgm();
+                    this.bgm.currentTime = 0;
+                    this.bgm.play().catch(() => {}); },
+                playMenuMusic() { if (!this.initialized) this.init(); if (this.bgm && !this.bgm.paused) this.bgm.pause();
+                    this.menuBgm.currentTime = 0;
+                    this.menuBgm.play().catch(() => {}); },
+                pauseMenuMusic() { if (!this.initialized) return; if (this.menuBgm && !this.menuBgm.paused) this.menuBgm
+                        .pause(); },
+                stopAllBgm() { if (this.bgm) { this.bgm.pause();
+                        this.bgm.currentTime = 0; } if (this.menuBgm) { this.menuBgm.pause();
+                        this.menuBgm.currentTime = 0; } },
+                isMenuPlaying() { return this.menuBgm && !this.menuBgm.paused && this.menuBgm.currentTime > 0; }
+            };
+
+            // DOM
+            let canvas, ctx, menuScreen, gameScreen, gameOverModal, scrollWrapper;
+            let scoreValue, undoCountSpan, shuffleCountSpan, finalScoreSpan, gameOverTitle;
+            let undoBtn, shuffleBtn, resetBtn, godBtn, playMusicBtn, floatContainer;
+            window.cardImages = [];
+            let floatingTimeout = null,
+                starsCreated = false;
+            let dpr = window.devicePixelRatio || 1;
+            let canvasW = 0,
+                canvasH = 0,
+                wrapperH = 0;
+            let layoutReady = false;
+
+            // 触摸点击状态（区分滑动与点击）
+            let touchStartInfo = null;
+
+            // 游戏状态
+            let gameState = {
+                grid: [],
+                helpers: [],
+                slotCards: [],
+                undoStack: [],
+                score: 0,
+                gameOver: false,
+                win: false,
+                godMode: false,
+                matchingCards: [],
+                undoLeft: CONFIG.UNDO_LIMIT,
+                shuffleLeft: CONFIG.SHUFFLE_LIMIT,
+                cardSize: 60,
+                cardGap: CONFIG.CARD_GAP,
+                slotCardSize: 40 // 卡槽卡片尺寸（计算后更新）
+            };
+
+            let moveAnim = {
+                active: false,
+                card: null,
+                fromX: 0,
+                fromY: 0,
+                toX: 0,
+                toY: 0,
+                startTime: 0,
+                duration: 350,
+                insertIndex: 0,
+                sourceInfo: null,
+                progress: 0
+            };
+
+            // ========== 布局计算 ==========
+            function computeLayout() {
+                const container = document.getElementById('gameContainer');
+                if (!container) return false;
+                const containerRect = container.getBoundingClientRect();
+                if (containerRect.width === 0) return false;
+
+                // 使用 scrollWrapper 的 clientWidth 作为画布宽度
+                if (!scrollWrapper) scrollWrapper = document.getElementById('canvasScrollWrapper');
+                const swW = scrollWrapper ? scrollWrapper.clientWidth : containerRect.width;
+                canvasW = swW > 0 ? swW : containerRect.width;
+
+                // wrapper 可见高度
+                wrapperH = scrollWrapper ? scrollWrapper.clientHeight : (containerRect.height * 0.65);
+                if (wrapperH <= 0) wrapperH = 400; // 兜底
+
+                // 主牌堆/辅助牌卡片尺寸：5列铺满
+                const availW = canvasW - CONFIG.PAD_X * 2;
+                gameState.cardSize = Math.floor((availW - (CONFIG.GRID_COLS - 1) * CONFIG.CARD_GAP) / CONFIG.GRID_COLS);
+                gameState.cardGap = CONFIG.CARD_GAP;
+
+                // 卡槽卡片尺寸：按比例缩小
+                gameState.slotCardSize = Math.floor(gameState.cardSize * CONFIG.SLOT_CARD_SCALE);
+
+                // 辅助牌配置
+                CONFIG.HELPER_TOTAL = CONFIG.HELPER_ROWS * CONFIG.HELPER_COLS;
+
+                // 计算内容总高度
+                const cs = gameState.cardSize;
+                const cg = gameState.cardGap;
+                const scs = gameState.slotCardSize;
+                const mainGridH = CONFIG.GRID_ROWS * cs + (CONFIG.GRID_ROWS - 1) * cg;
+                const helperH = CONFIG.HELPER_ROWS * cs + (CONFIG.HELPER_ROWS - 1) * cg;
+                const slotH = scs + 22;
+                const contentH = CONFIG.TOP_PADDING + mainGridH + CONFIG.MAIN_HELPER_GAP + helperH + CONFIG.HELPER_SLOT_GAP +
+                    slotH + CONFIG.BOTTOM_MARGIN + 50;
+
+                // canvas 高度取内容高度和 wrapper 可见高度的较大值
+                canvasH = Math.max(contentH, wrapperH);
+
+                // 设置 canvas 像素尺寸
+                canvas.width = Math.floor(canvasW * dpr);
+                canvas.height = Math.floor(canvasH * dpr);
+                canvas.style.width = canvasW + 'px';
+                canvas.style.height = canvasH + 'px';
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+                layoutReady = true;
+                return true;
+            }
+
+            function getCardPositions() {
+                const cs = gameState.cardSize;
+                const cg = gameState.cardGap;
+                const scs = gameState.slotCardSize;
+                const gridW = CONFIG.GRID_COLS * cs + (CONFIG.GRID_COLS - 1) * cg;
+                const gridX = (canvasW - gridW) / 2;
+
+                // 卡槽尺寸（基于缩小后的卡片）
+                const slotH = scs + 22;
+                const slotW = CONFIG.SLOT_MAX * scs + (CONFIG.SLOT_MAX - 1) * CONFIG.SLOT_CARD_GAP + 20;
+                const slotY = canvasH - CONFIG.BOTTOM_MARGIN - slotH - 50;
+                const slotX = (canvasW - slotW) / 2;
+
+                // 辅助牌
+                const helperH = CONFIG.HELPER_ROWS * cs + (CONFIG.HELPER_ROWS - 1) * cg;
+                const helperStartY = slotY - CONFIG.HELPER_SLOT_GAP - helperH;
+
+                // 主牌堆（底部紧贴辅助牌上方）
+                const mainGridH = CONFIG.GRID_ROWS * cs + (CONFIG.GRID_ROWS - 1) * cg;
+                const gridY = helperStartY - CONFIG.MAIN_HELPER_GAP - mainGridH;
+
+                return {
+                    gridX,
+                    gridY,
+                    cardSize: cs,
+                    cardGap: cg,
+                    slotX,
+                    slotY,
+                    slotCardSize: scs,
+                    helperStartY,
+                    helperCols: CONFIG.HELPER_COLS,
+                    helperRows: CONFIG.HELPER_ROWS
+                };
+            }
+
+            function drawRoundRect(ctx, x, y, w, h, r) {
+                ctx.beginPath();
+                ctx.moveTo(x + r, y);
+                ctx.lineTo(x + w - r, y);
+                ctx.arcTo(x + w, y, x + w, y + r, r);
+                ctx.lineTo(x + w, y + h - r);
+                ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+                ctx.lineTo(x + r, y + h);
+                ctx.arcTo(x, y + h, x, y + h - r, r);
+                ctx.lineTo(x, y + r);
+                ctx.arcTo(x, y, x + r, y, r);
+                ctx.closePath();
+            }
+
+            function loadCardImages() {
+                for (let i = 0; i < CONFIG.CARD_TYPES; i++) {
+                    const img = new Image();
+                    img.src = `images/${i}.png`;
+                    img.onerror = () => { window.cardImages[i] = null; };
+                    window.cardImages[i] = img;
+                }
+            }
+
+            function generateMainCards() {
+                // 12种类型，每种6张，共72张
+                let types = [];
+                for (let t = 0; t < CONFIG.CARD_TYPES; t++) {
+                    for (let i = 0; i < 6; i++) types.push(t);
+                }
+                // 洗牌
+                for (let i = types.length - 1; i > 0; i--) {
+                    let j = Math.floor(Math.random() * (i + 1));
+                    [types[i], types[j]] = [types[j], types[i]];
+                }
+                let grid = Array(CONFIG.GRID_COLS).fill().map(() => Array(CONFIG.GRID_ROWS).fill(null));
+                let idx = 0;
+                // 空3格位置（对称分布：顶部左中右）
+                let emptySet = new Set(CONFIG.EMPTY_CELLS.map(([c, r]) => `${c},${r}`));
+                for (let col = 0; col < CONFIG.GRID_COLS; col++) {
+                    for (let row = 0; row < CONFIG.GRID_ROWS; row++) {
+                        if (emptySet.has(`${col},${row}`)) continue;
+                        if (idx >= types.length) break;
+                        grid[col][row] = { id: `g${col}_${row}`, type: types[idx], image: window.cardImages[types[
+                            idx]] };
+                        idx++;
+                    }
+                }
+                return grid;
+            }
+
+            function generateHelpers() {
+                // 2行5列=10张辅助牌，从12种类型中随机抽取
+                let total = CONFIG.HELPER_COLS * CONFIG.HELPER_ROWS;
+                let typesPool = [];
+                for (let t = 0; t < CONFIG.CARD_TYPES; t++) typesPool.push(t);
+                let extra = total - CONFIG.CARD_TYPES;
+                for (let i = 0; i < extra; i++) typesPool.push(Math.floor(Math.random() * CONFIG.CARD_TYPES));
+                for (let i = typesPool.length - 1; i > 0; i--) {
+                    let j = Math.floor(Math.random() * (i + 1));
+                    [typesPool[i], typesPool[j]] = [typesPool[j], typesPool[i]];
+                }
+                return typesPool.map((t, idx) => ({ id: `h_${idx}`, type: t, image: window.cardImages[t] }));
+            }
+
+            function processMatches(onComplete) {
+                if (!applyMatch()) { if (onComplete) onComplete(); return; }
+                setTimeout(() => processMatches(onComplete), CONFIG.MATCH_ANIMATION_DURATION + 50);
+            }
+
+            function applyMatch() {
+                if (gameState.slotCards.length < 3) return false;
+                let typeCount = {};
+                gameState.slotCards.forEach(c => typeCount[c.type] = (typeCount[c.type] || 0) + 1);
+                let matchedTypes = Object.keys(typeCount).filter(t => typeCount[t] >= 3);
+                if (matchedTypes.length === 0) return false;
+                let toRemove = new Set();
+                for (let t of matchedTypes) {
+                    let candidates = gameState.slotCards.map((c, i) => ({ card: c, idx: i }))
+                        .filter(item => item.card.type == t && !toRemove.has(item.idx));
+                    if (candidates.length >= 3) candidates.slice(0, 3).forEach(item => toRemove.add(item.idx));
+                }
+                if (toRemove.size === 0) return false;
+                let newSlot = [],
+                    removedCards = [];
+                for (let i = 0; i < gameState.slotCards.length; i++) {
+                    if (toRemove.has(i)) removedCards.push(gameState.slotCards[i]);
+                    else newSlot.push(gameState.slotCards[i]);
+                }
+                gameState.slotCards = newSlot;
+                let removedSet = new Set(removedCards);
+                gameState.undoStack = gameState.undoStack.filter(op => !removedSet.has(op.card));
+                gameState.score += removedCards.length * 5;
+                gameState.matchingCards = removedCards;
+                AudioManager.play('match');
+                updateUI();
+                drawGame();
+                setTimeout(() => { gameState.matchingCards = [];
+                    drawGame(); }, CONFIG.MATCH_ANIMATION_DURATION);
+                return true;
+            }
+
+            // 滚动到画布底部
+            function scrollToBottom(smooth = true) {
+                if (!scrollWrapper) return;
+                const target = scrollWrapper.scrollHeight - scrollWrapper.clientHeight;
+                if (target <= 0) return;
+                if (smooth) {
+                    scrollWrapper.scrollTo({ top: target, behavior: 'smooth' });
+                } else {
+                    scrollWrapper.scrollTop = target;
+                }
+            }
+
+            function addToSlot(card, source, helperIndex = -1) {
+                if (gameState.slotCards.length >= CONFIG.SLOT_MAX || gameState.gameOver) return false;
+                if (moveAnim.active) return false;
+
+                let insertIndex = gameState.slotCards.length;
+                for (let i = gameState.slotCards.length - 1; i >= 0; i--) {
+                    if (gameState.slotCards[i].type === card.type) { insertIndex = i + 1; break; }
+                }
+
+                let pos = getCardPositions();
+                let cs = pos.cardSize,
+                    cg = pos.cardGap;
+                let scs = pos.slotCardSize;
+                let fromX, fromY;
+
+                if (source === 'main') {
+                    let col = getCardColumn(card),
+                        row = -1;
+                    for (let r = 0; r < CONFIG.GRID_ROWS; r++) {
+                        if (gameState.grid[col][r] === card) { row = r; break; }
+                    }
+                    if (row === -1) return false;
+                    fromX = pos.gridX + col * (cs + cg);
+                    fromY = pos.gridY + row * (cs + cg);
+                } else {
+                    let row = Math.floor(helperIndex / CONFIG.HELPER_COLS);
+                    let col = helperIndex % CONFIG.HELPER_COLS;
+                    fromX = pos.gridX + col * (cs + cg);
+                    fromY = pos.helperStartY + row * (cs + cg);
+                }
+
+                // 目标坐标：卡槽内缩小后的位置
+                let slotStep = scs + CONFIG.SLOT_CARD_GAP;
+                let slotStartX = pos.slotX + 10;
+                let toX = slotStartX + insertIndex * slotStep;
+                let toY = pos.slotY + 11;
+
+                let sourceInfo = { card: card, source: source, colOrIndex: source === 'main' ? getCardColumn(card) :
+                        helperIndex };
+
+                if (source === 'main') {
+                    let col = sourceInfo.colOrIndex;
+                    let colArr = gameState.grid[col];
+                    for (let row = 0; row < CONFIG.GRID_ROWS; row++) {
+                        if (colArr[row] === card) { colArr[row] = null; break; }
+                    }
+                    let remaining = colArr.filter(c => c !== null);
+                    for (let r = 0; r < CONFIG.GRID_ROWS; r++) colArr[r] = null;
+                    for (let i = 0; i < remaining.length; i++) colArr[CONFIG.GRID_ROWS - 1 - i] = remaining[remaining
+                    .length - 1 - i];
+                } else if (source === 'helper' && helperIndex !== -1) {
+                    gameState.helpers[helperIndex] = null;
+                }
+
+                moveAnim = {
+                    active: true,
+                    card: card,
+                    fromX,
+                    fromY,
+                    toX,
+                    toY,
+                    startTime: performance.now(),
+                    duration: 350,
+                    insertIndex,
+                    sourceInfo,
+                    progress: 0
+                };
+                AudioManager.play('click');
+                updateUI();
+                requestAnimationFrame(updateMoveAnimation);
+                return true;
+            }
+
+            function updateMoveAnimation(now) {
+                if (!moveAnim.active) return;
+                let elapsed = now - moveAnim.startTime;
+                let progress = Math.min(elapsed / moveAnim.duration, 1);
+                let ease = 1 - Math.pow(1 - progress, 3);
+                moveAnim.progress = ease;
+                if (progress < 1) requestAnimationFrame(updateMoveAnimation);
+                else onMoveComplete();
+            }
+
+            function onMoveComplete() {
+                gameState.slotCards.splice(moveAnim.insertIndex, 0, moveAnim.card);
+                gameState.undoStack.push(moveAnim.sourceInfo);
+                moveAnim.active = false;
+                // 滚动到底部，让用户看到卡槽更新
+                scrollToBottom(true);
+                processMatches(() => { checkGameState();
+                    updateUI();
+                    drawGame(); });
+            }
+
+            function getCardColumn(card) {
+                for (let col = 0; col < CONFIG.GRID_COLS; col++)
+                    for (let row = 0; row < CONFIG.GRID_ROWS; row++)
+                        if (gameState.grid[col][row] === card) return col;
+                return -1;
+            }
+
+            function undo() {
+                if (gameState.undoStack.length === 0 || gameState.gameOver || moveAnim.active) return;
+                if (!gameState.godMode && gameState.undoLeft <= 0) return;
+                if (!gameState.godMode) gameState.undoLeft--;
+                let lastOp = gameState.undoStack.pop();
+                let card = lastOp.card;
+                let cardIndex = gameState.slotCards.indexOf(card);
+                if (cardIndex === -1) return;
+                gameState.slotCards.splice(cardIndex, 1);
+                if (lastOp.source === 'main') {
+                    let col = lastOp.colOrIndex;
+                    if (col >= 0 && col < CONFIG.GRID_COLS) {
+                        let placed = false;
+                        for (let row = 0; row < CONFIG.GRID_ROWS; row++) {
+                            if (gameState.grid[col][row] === null) { gameState.grid[col][row] = card;
+                                placed = true; break; }
+                        }
+                        if (!placed) {
+                            for (let row = CONFIG.GRID_ROWS - 1; row > 0; row--) gameState.grid[col][row] = gameState
+                                .grid[col][row - 1];
+                            gameState.grid[col][0] = card;
+                        }
+                    }
+                } else if (lastOp.source === 'helper') {
+                    let idx = lastOp.colOrIndex;
+                    if (idx >= 0 && idx < gameState.helpers.length && gameState.helpers[idx] === null) gameState.helpers[
+                        idx] = card;
+                }
+                AudioManager.play('undo');
+                updateUI();
+                drawGame();
+                checkGameState();
+            }
+
+            function shuffleCards() {
+                if ((gameState.shuffleLeft <= 0 && !gameState.godMode) || gameState.gameOver || moveAnim.active) return;
+                if (!gameState.godMode) gameState.shuffleLeft--;
+                let allCards = [];
+                for (let col = 0; col < CONFIG.GRID_COLS; col++)
+                    for (let row = 0; row < CONFIG.GRID_ROWS; row++)
+                        if (gameState.grid[col][row]) allCards.push(gameState.grid[col][row]);
+                if (allCards.length === 0) return;
+                let types = allCards.map(c => c.type);
+                for (let i = types.length - 1; i > 0; i--) { let j = Math.floor(Math.random() * (i + 1));
+                    [types[i], types[j]] = [types[j], types[i]]; }
+                allCards.forEach((c, idx) => { c.type = types[idx];
+                    c.image = window.cardImages[types[idx]]; });
+                AudioManager.play('shuffle');
+                updateUI();
+                drawGame();
+            }
+
+            function resetGame() {
+                moveAnim.active = false;
+                gameState.grid = generateMainCards();
+                gameState.helpers = generateHelpers();
+                gameState.slotCards = [];
+                gameState.undoStack = [];
+                gameState.score = 0;
+                gameState.gameOver = false;
+                gameState.win = false;
+                gameState.matchingCards = [];
+                gameState.undoLeft = CONFIG.UNDO_LIMIT;
+                gameState.shuffleLeft = CONFIG.SHUFFLE_LIMIT;
+                gameState.godMode = false;
+                if (godBtn) { godBtn.classList.remove('active');
+                    godBtn.textContent = '👑 开通SVIP';
+                    godBtn.disabled = false; }
+                AudioManager.play('reset');
+                updateUI();
+                drawGame();
+                checkGameState();
+                // 滚动到底部
+                requestAnimationFrame(() => scrollToBottom(false));
+            }
+
+            function checkGameState() {
+                if (gameState.gameOver) return;
+                // 获胜条件：主牌堆全部消除
+                let remaining = gameState.grid.flat().filter(c => c).length;
+                if (remaining === 0) {
+                    gameState.gameOver = true;
+                    gameState.win = true;
+                    gameState.score = CONFIG.WIN_SCORE;
+                    updateUI();
+                    showGameOver(true);
+                    return;
+                }
+                // 失败条件：卡槽满了且没有可消除的
+                if (gameState.slotCards.length >= CONFIG.SLOT_MAX) {
+                    let cnt = {};
+                    gameState.slotCards.forEach(c => cnt[c.type] = (cnt[c.type] || 0) + 1);
+                    if (!Object.values(cnt).some(v => v >= 3)) {
+                        gameState.gameOver = true;
+                        gameState.win = false;
+                        showGameOver(false);
+                    }
+                }
+            }
+
+            function activateGodMode() {
+                if (gameState.godMode) return;
+                gameState.godMode = true;
+                if (godBtn) { godBtn.classList.add('active');
+                    godBtn.textContent = '👑 已开通SVIP';
+                    godBtn.disabled = true; }
+                updateUI();
+                AudioManager.play('click');
+                alert('🎉 您已充值一百万成功开通本局VIP！\n（特权仅限当前对局）');
+            }
+
+            function updateUI() {
+                if (scoreValue) scoreValue.textContent = gameState.score;
+                if (undoCountSpan) undoCountSpan.textContent = gameState.godMode ? '∞' : gameState.undoLeft;
+                if (shuffleCountSpan) shuffleCountSpan.textContent = gameState.godMode ? '∞' : gameState.shuffleLeft;
+                let animating = moveAnim.active;
+                if (undoBtn) undoBtn.disabled = animating || (!gameState.godMode && gameState.undoLeft <= 0) || gameState
+                    .gameOver || gameState.undoStack.length === 0;
+                if (shuffleBtn) shuffleBtn.disabled = animating || (!gameState.godMode && gameState.shuffleLeft <= 0) ||
+                    gameState.gameOver;
+                if (resetBtn) resetBtn.disabled = animating;
+                if (godBtn) godBtn.disabled = animating || gameState.godMode || gameState.gameOver;
+            }
+
+            function showGameOver(win) {
+                if (gameOverTitle) gameOverTitle.textContent = win ? '🎉 生日快乐！' : '😢 槽位已满';
+                if (finalScoreSpan) finalScoreSpan.textContent = gameState.score;
+                if (gameOverModal) gameOverModal.style.display = 'flex';
+                AudioManager.play(win ? 'win' : 'lose');
+            }
+
+            function hideGameOver() { if (gameOverModal) gameOverModal.style.display = 'none'; }
+
+            function drawCard(ctx, card, x, y, size, alpha = 1, scale = 1, grayscale = false) {
+                let actual = size * scale,
+                    off = (size - actual) / 2;
+                ctx.save();
+                if (alpha < 1) ctx.globalAlpha = alpha;
+                if (grayscale) ctx.filter = 'grayscale(100%) brightness(0.65)';
+                let img = card.image;
+                if (img && img.complete && img.naturalWidth > 0) {
+                    ctx.drawImage(img, x + off, y + off, actual, actual);
+                } else {
+                    let colors = CARD_COLORS[card.type % CARD_COLORS.length];
+                    let grad = ctx.createLinearGradient(x + off, y + off, x + off, y + off + actual);
+                    grad.addColorStop(0, colors.highlight);
+                    grad.addColorStop(0.5, colors.bg);
+                    grad.addColorStop(1, colors.border);
+                    ctx.fillStyle = grad;
+                    drawRoundRect(ctx, x + off, y + off, actual, actual, actual * 0.18);
+                    ctx.fill();
+                    ctx.strokeStyle = colors.border;
+                    ctx.lineWidth = Math.max(1.5, actual * 0.04);
+                    drawRoundRect(ctx, x + off, y + off, actual, actual, actual * 0.18);
+                    ctx.stroke();
+                    ctx.fillStyle = colors.text;
+                    ctx.font = `bold ${Math.floor(actual*0.38)}px "Georgia","PingFang SC"`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(card.type + 1, x + off + actual / 2, y + off + actual / 2);
+                }
+                ctx.restore();
+            }
+
+            function drawGame() {
+                if (!ctx || !layoutReady) return;
+                ctx.clearRect(0, 0, canvasW, canvasH);
+                let pos = getCardPositions();
+                let cs = pos.cardSize,
+                    cg = pos.cardGap,
+                    scs = pos.slotCardSize;
+
+                // 主牌堆
+                for (let col = 0; col < CONFIG.GRID_COLS; col++) {
+                    let bottomRow = -1;
+                    for (let r = CONFIG.GRID_ROWS - 1; r >= 0; r--)
+                        if (gameState.grid[col][r]) { bottomRow = r; break; }
+                    for (let row = 0; row < CONFIG.GRID_ROWS; row++) {
+                        let card = gameState.grid[col][row];
+                        if (!card) continue;
+                        if (moveAnim.active && moveAnim.card === card) continue;
+                        let x = pos.gridX + col * (cs + cg);
+                        let y = pos.gridY + row * (cs + cg);
+                        if (y > canvasH || y + cs < 0) continue;
+                        let clickable = (row === bottomRow);
+                        drawCard(ctx, card, x, y, cs, 1, 1, !clickable);
+                    }
+                }
+
+                // 辅助牌
+                for (let row = 0; row < CONFIG.HELPER_ROWS; row++) {
+                    for (let col = 0; col < CONFIG.HELPER_COLS; col++) {
+                        let idx = row * CONFIG.HELPER_COLS + col;
+                        if (idx >= gameState.helpers.length) continue;
+                        let card = gameState.helpers[idx];
+                        if (!card) continue;
+                        if (moveAnim.active && moveAnim.card === card) continue;
+                        let x = pos.gridX + col * (cs + cg);
+                        let y = pos.helperStartY + row * (cs + cg);
+                        if (y > canvasH || y + cs < 0) continue;
+                        drawCard(ctx, card, x, y, cs);
+                    }
+                }
+
+                // 卡槽背景
+                let slotW = CONFIG.SLOT_MAX * scs + (CONFIG.SLOT_MAX - 1) * CONFIG.SLOT_CARD_GAP + 20;
+                let slotH = scs + 22;
+                ctx.fillStyle = 'rgba(255,255,255,0.78)';
+                drawRoundRect(ctx, pos.slotX, pos.slotY, slotW, slotH, scs * 0.22);
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(200,170,180,0.7)';
+                ctx.lineWidth = 2;
+                drawRoundRect(ctx, pos.slotX, pos.slotY, slotW, slotH, scs * 0.22);
+                ctx.stroke();
+
+                // 卡槽卡片
+                let step = scs + CONFIG.SLOT_CARD_GAP;
+                let startX = pos.slotX + 10;
+                gameState.slotCards.forEach((card, i) => {
+                    let x = startX + i * step;
+                    let y = pos.slotY + 11;
+                    let isMatch = gameState.matchingCards.includes(card);
+                    drawCard(ctx, card, x, y, scs, isMatch ? 0.6 : 1, isMatch ? 1.2 : 1);
+                });
+
+                // 飞行动画卡片
+                if (moveAnim.active) {
+                    let curX = moveAnim.fromX + (moveAnim.toX - moveAnim.fromX) * moveAnim.progress;
+                    let curY = moveAnim.fromY + (moveAnim.toY - moveAnim.fromY) * moveAnim.progress;
+                    let curSize = cs + (scs - cs) * moveAnim.progress;
+                    let extraScale = 1 + 0.15 * Math.sin(moveAnim.progress * Math.PI);
+                    drawCard(ctx, moveAnim.card, curX, curY, curSize, 1, extraScale);
+                }
+            }
+
+            // 处理点击的核心逻辑（接受 clientX, clientY）
+            function handleCanvasClickAtPoint(clientX, clientY) {
+                if (gameState.gameOver || moveAnim.active) return;
+                let rect = canvas.getBoundingClientRect();
+                let scaleX = canvasW / rect.width,
+                    scaleY = canvasH / rect.height;
+                let mx = (clientX - rect.left) * scaleX,
+                    my = (clientY - rect.top) * scaleY;
+                let pos = getCardPositions(),
+                    cs = pos.cardSize;
+
+                // 主牌堆
+                for (let col = 0; col < CONFIG.GRID_COLS; col++) {
+                    let bottomRow = -1;
+                    for (let r = CONFIG.GRID_ROWS - 1; r >= 0; r--)
+                        if (gameState.grid[col][r]) { bottomRow = r; break; }
+                    if (bottomRow === -1) continue;
+                    let card = gameState.grid[col][bottomRow];
+                    let x = pos.gridX + col * (cs + pos.cardGap);
+                    let y = pos.gridY + bottomRow * (cs + pos.cardGap);
+                    if (mx >= x && mx <= x + cs && my >= y && my <= y + cs) { addToSlot(card, 'main'); return; }
+                }
+
+                // 辅助牌
+                for (let row = 0; row < CONFIG.HELPER_ROWS; row++) {
+                    for (let col = 0; col < CONFIG.HELPER_COLS; col++) {
+                        let idx = row * CONFIG.HELPER_COLS + col;
+                        if (idx >= gameState.helpers.length) continue;
+                        let card = gameState.helpers[idx];
+                        if (!card) continue;
+                        let x = pos.gridX + col * (cs + pos.cardGap);
+                        let y = pos.helperStartY + row * (cs + pos.cardGap);
+                        if (mx >= x && mx <= x + cs && my >= y && my <= y + cs) { addToSlot(card, 'helper', idx); return; }
+                    }
+                }
+            }
+
+            // 桌面端 click 事件
+            function handleCanvasClick(e) {
+                if (gameState.gameOver || moveAnim.active) return;
+                e.preventDefault();
+                handleCanvasClickAtPoint(e.clientX, e.clientY);
+            }
+
+            // 移动端触摸处理（区分滑动与点击）
+            function handleCanvasTouchStart(e) {
+                if (e.touches.length === 1) {
+                    touchStartInfo = {
+                        x: e.touches[0].clientX,
+                        y: e.touches[0].clientY,
+                        time: Date.now()
+                    };
+                } else {
+                    touchStartInfo = null;
+                }
+            }
+
+            function handleCanvasTouchEnd(e) {
+                if (!touchStartInfo) return;
+                if (gameState.gameOver || moveAnim.active) { touchStartInfo = null; return; }
+                const changedTouch = e.changedTouches[0];
+                if (!changedTouch) { touchStartInfo = null; return; }
+                const dx = changedTouch.clientX - touchStartInfo.x;
+                const dy = changedTouch.clientY - touchStartInfo.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const dt = Date.now() - touchStartInfo.time;
+                // 位移 < 10px 且时间 < 500ms 视为点击
+                if (dist < 10 && dt < 500) {
+                    e.preventDefault(); // 阻止模拟的 click 事件
+                    handleCanvasClickAtPoint(touchStartInfo.x, touchStartInfo.y);
+                }
+                touchStartInfo = null;
+            }
+
+            function updateMusicButtonUI() {
+                if (!playMusicBtn) return;
+                if (AudioManager.isMenuPlaying()) {
+                    playMusicBtn.innerHTML = '⏸️ 暂停音乐';
+                    playMusicBtn.classList.add('active-music');
+                } else {
+                    playMusicBtn.innerHTML = '🎵 播放音乐';
+                    playMusicBtn.classList.remove('active-music');
+                }
+            }
+
+            function toggleMenuMusic() {
+                if (AudioManager.isMenuPlaying()) AudioManager.pauseMenuMusic();
+                else { AudioManager.stopAllBgm();
+                    AudioManager.playMenuMusic(); }
+                updateMusicButtonUI();
+                AudioManager.play('click');
+            }
+
+            // ========== 菜单特效 ==========
+            function createStars() {
+                if (starsCreated || !menuScreen) return;
+                starsCreated = true;
+                const fragment = document.createDocumentFragment();
+                for (let i = 0; i < 32; i++) {
+                    const star = document.createElement('span');
+                    star.classList.add('menu-star', i < 22 ? 'gold' : 'white');
+                    const size = i < 22 ? (Math.random() * 4 + 3) : (Math.random() * 2.5 + 1.5);
+                    star.style.width = size + 'px';
+                    star.style.height = size + 'px';
+                    star.style.left = (Math.random() * 94) + '%';
+                    star.style.top = (Math.random() * 92) + '%';
+                    star.style.setProperty('--twinkle-duration', (Math.random() * 2.5 + 1.8) + 's');
+                    star.style.setProperty('--twinkle-delay', (Math.random() * 3.5) + 's');
+                    fragment.appendChild(star);
+                }
+                const menuDecoration = menuScreen.querySelector('.menu-decoration');
+                if (menuDecoration) menuScreen.insertBefore(fragment, menuDecoration);
+                else menuScreen.appendChild(fragment);
+            }
+
+            const FLOAT_EMOJIS = ['🎈', '🎁', '🎀', '🎂', '💝', '🎉', '💖', '🌸', '✨', '💕', '🦋', '🌷', '🍰', '💐', '🎊',
+            '🧁'];
+
+            function spawnFloatingItem() {
+                if (!floatContainer || menuScreen.style.display === 'none') return;
+                const item = document.createElement('span');
+                item.classList.add('float-item');
+                item.textContent = FLOAT_EMOJIS[Math.floor(Math.random() * FLOAT_EMOJIS.length)];
+                const size = Math.floor(Math.random() * 28 + 26);
+                const leftPercent = Math.random() * 88 + 4;
+                const duration = Math.random() * 3.5 + 3;
+                item.style.setProperty('--float-size', size + 'px');
+                item.style.setProperty('--float-duration', duration + 's');
+                item.style.setProperty('--float-delay', '0s');
+                item.style.setProperty('--float-start-rotate', ((Math.random() - 0.5) * 30) + 'deg');
+                item.style.setProperty('--float-mid-rotate', ((Math.random() - 0.5) * 24) + 'deg');
+                item.style.setProperty('--float-end-rotate', ((Math.random() - 0.5) * 40) + 'deg');
+                item.style.left = leftPercent + '%';
+                item.addEventListener('animationend', () => { if (item.parentNode) item.parentNode.removeChild(
+                    item); }, { once: true });
+                floatContainer.appendChild(item);
+            }
+
+            function scheduleNextFloat() {
+                if (menuScreen.style.display === 'none') return;
+                floatingTimeout = setTimeout(() => { spawnFloatingItem();
+                    scheduleNextFloat(); }, Math.random() * 900 + 550);
+            }
+
+            function startFloatingItems() {
+                stopFloatingItems();
+                if (!floatContainer) floatContainer = document.getElementById('floatContainer');
+                if (!floatContainer) return;
+                floatContainer.innerHTML = '';
+                for (let i = 0; i < 3; i++) setTimeout(() => spawnFloatingItem(), i * 200);
+                scheduleNextFloat();
+            }
+
+            function stopFloatingItems() {
+                if (floatingTimeout) { clearTimeout(floatingTimeout);
+                    floatingTimeout = null; }
+                if (floatContainer) floatContainer.innerHTML = '';
+            }
+
+            // ========== 切换页面 ==========
+            function startGame() {
+                menuScreen.style.display = 'none';
+                gameScreen.style.display = 'flex';
+                hideGameOver();
+                stopFloatingItems();
+                AudioManager.stopAllBgm();
+                AudioManager.playGameBgm();
+                requestAnimationFrame(() => {
+                    computeLayout();
+                    resetGame();
+                    // 初始滚动到底部（卡槽可见）
+                    requestAnimationFrame(() => scrollToBottom(false));
+                });
+            }
+
+            function backToMenu() {
+                gameScreen.style.display = 'none';
+                menuScreen.style.display = 'flex';
+                hideGameOver();
+                AudioManager.stopAllBgm();
+                if (playMusicBtn) { playMusicBtn.disabled = false;
+                    playMusicBtn.innerHTML = '🎵 播放音乐';
+                    playMusicBtn.classList.remove('active-music'); }
+                AudioManager.play('click');
+                startFloatingItems();
+            }
+
+            // ========== 初始化 ==========
+            function init() {
+                canvas = document.getElementById('gameCanvas');
+                ctx = canvas?.getContext('2d');
+                menuScreen = document.getElementById('menuScreen');
+                gameScreen = document.getElementById('gameScreen');
+                gameOverModal = document.getElementById('gameOverModal');
+                floatContainer = document.getElementById('floatContainer');
+                scrollWrapper = document.getElementById('canvasScrollWrapper');
+                scoreValue = document.getElementById('scoreValue');
+                undoCountSpan = document.getElementById('undoCount');
+                shuffleCountSpan = document.getElementById('shuffleCount');
+                finalScoreSpan = document.getElementById('finalScore');
+                gameOverTitle = document.getElementById('gameOverTitle');
+                const startBtn = document.getElementById('startBtn');
+                const quitBtn = document.getElementById('quitBtn');
+                playMusicBtn = document.getElementById('playMusicBtn');
+                undoBtn = document.getElementById('undoBtn');
+                shuffleBtn = document.getElementById('shuffleBtn');
+                resetBtn = document.getElementById('resetBtn');
+                godBtn = document.getElementById('godBtn');
+                const restartBtn = document.getElementById('restartBtn');
+                const exitBtn = document.getElementById('exitBtn');
+
+                if (!canvas) return;
+
+                loadCardImages();
+                createStars();
+                startFloatingItems();
+
+                startBtn.onclick = (e) => { e.stopPropagation();
+                    AudioManager.play('click');
+                    startGame(); };
+                quitBtn.onclick = (e) => { e.stopPropagation();
+                    AudioManager.play('click');
+                    backToMenu(); };
+                if (playMusicBtn) playMusicBtn.onclick = (e) => { e.stopPropagation();
+                    toggleMenuMusic(); };
+                undoBtn.onclick = () => undo();
+                shuffleBtn.onclick = () => shuffleCards();
+                resetBtn.onclick = () => resetGame();
+                godBtn.onclick = () => activateGodMode();
+                restartBtn.onclick = () => { resetGame();
+                    hideGameOver();
+                    AudioManager.play('click');
+                    requestAnimationFrame(() => scrollToBottom(false)); };
+                exitBtn.onclick = () => { AudioManager.play('click');
+                    backToMenu(); };
+
+                // 桌面端 click 事件
+                canvas.addEventListener('click', handleCanvasClick);
+                // 移动端触摸事件（不阻止滚动）
+                canvas.addEventListener('touchstart', handleCanvasTouchStart, { passive: true });
+                canvas.addEventListener('touchend', handleCanvasTouchEnd, { passive: false });
+
+                window.addEventListener('resize', () => {
+                    if (gameScreen.style.display === 'flex') {
+                        computeLayout();
+                        drawGame();
+                    }
+                });
+
+                function loop() {
+                    if (gameScreen.style.display === 'flex') drawGame();
+                    requestAnimationFrame(loop);
+                }
+                loop();
+            }
+            document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', init) : init();
+        })();
+    </script>
+</body>
+</html>
